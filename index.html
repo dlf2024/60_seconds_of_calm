@@ -37,7 +37,7 @@
     // --- CONFIG ---
     const API_KEY = "AIzaSyAfzTSTjTKax3kN1kIvjWpCgC9vhHelC38";             // ← replace
     const PLAYLIST_ID = "UUHckElrn7MRr8UL__97gqdg";     // ← replace
-    const MAX_RESULTS = 12;                              // number of videos to show
+    const MAX_RESULTS = 50;                              // number of videos to show
 
     // Update year in footer
     document.getElementById("year").textContent = new Date().getFullYear();
@@ -52,12 +52,15 @@
         items.forEach(({ snippet }) => {
           const { resourceId: { videoId }, title, thumbnails } = snippet;
           const mediumThumb = thumbnails.medium || thumbnails.default;
-          container.insertAdjacentHTML("beforeend", `
+          container.insertAdjacentHTML('beforeend', `
             <article class="card">
-              <a href="https://youtu.be/${videoId}" target="_blank" rel="noopener">
-                <img src="${mediumThumb.url}" width="${mediumThumb.width}" height="${mediumThumb.height}" alt="${title}">
-                <h3>${title}</h3>
-              </a>
+              <iframe width="100%" height="158"
+                      src="https://www.youtube.com/embed/${videoId}"
+                      title="${title}" frameborder="0"
+                      allow="accelerometer; autoplay; clipboard-write;
+                            encrypted-media; gyroscope; picture-in-picture"
+                      allowfullscreen></iframe>
+              <h3>${title}</h3>
             </article>
           `);
         });
