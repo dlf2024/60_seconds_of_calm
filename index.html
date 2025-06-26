@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>60 Seconds of Calm – Official Site</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- External styles -->
+  <link rel="stylesheet" href="./resources/css/reset.css">
+  <link rel="stylesheet" href="./resources/css/style.css">
+</head>
+<body>
+  <!-- Hero banner -->
+  <header class="banner" style="background-image: url('./resources/files/banner.png');"></header>
+
+  <!-- Profile row -->
+  <section class="profile-row container">
+    <!-- Avatar -->
+    <img src="./resources/files/avatar.jpg" alt="Channel Logo" class="avatar">
+    <div class="profile-meta">
+      <h1>60 Seconds of Calm</h1>
+      <p>Enjoy 1‑minute nature, garden and art escapes. Take a breath & relax.</p>
+      <a class="button" href="https://www.youtube.com/@60_seconds_of_calm" target="_blank" rel="noopener">Subscribe on YouTube</a>
+    </div>
+  </section>
+
+  <main class="container">
+    <h2 class="section-title">Latest Videos</h2>
+    <section id="videos" class="grid"></section>
+  </main>
+
+  <footer class="footer container">
+    <p>&copy; <span id="year"></span> 60 Seconds of Calm. All rights reserved.</p>
+  </footer>
+
+  <!-- ====================== Inline JS ====================== -->
+  <script>
+    // --- CONFIG ---
+    const API_KEY = "AIzaSyAfzTSTjTKax3kN1kIvjWpCgC9vhHelC38";             // ← replace
+    const PLAYLIST_ID = "UUHckElrn7MRr8UL__97gqdg";     // ← replace
+    const MAX_RESULTS = 12;                              // number of videos to show
+
+    // Update year in footer
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    // Fetch the latest uploads and inject cards
+    const requestUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=${MAX_RESULTS}&playlistId=${PLAYLIST_ID}&key=${API_KEY}`;
+
+    fetch(requestUrl)
+      .then(r => r.json())
+      .then(({ items }) => {
+        const container = document.getElementById("videos");
+        items.forEach(({ snippet }) => {
+          const { resourceId: { videoId }, title, thumbnails } = snippet;
+          const mediumThumb = thumbnails.medium || thumbnails.default;
+          container.insertAdjacentHTML("beforeend", `
+            <article class="card">
+              <a href="https://youtu.be/${videoId}" target="_blank" rel="noopener">
+                <img src="${mediumThumb.url}" width="${mediumThumb.width}" height="${mediumThumb.height}" alt="${title}">
+                <h3>${title}</h3>
+              </a>
+            </article>
+          `);
+        });
+      })
+      .catch(err => {
+        console.error("YouTube API error", err);
+        document.getElementById("videos").innerHTML = "<p class=\"error\">Could not load videos. Check API key & quota.</p>";
+      });
+  </script>
+</body>
+</html>
