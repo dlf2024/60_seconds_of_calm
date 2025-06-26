@@ -26,6 +26,7 @@
   <main class="container">
     <h2 class="section-title">Latest Videos</h2>
     <section id="videos" class="grid"></section>
+    <button id="loadMore" class="load-more">Load More</button>
   </main>
 
   <footer class="footer container">
@@ -35,40 +36,64 @@
   <!-- ====================== Inline JS ====================== -->
   <script>
     // --- CONFIG ---
-    const API_KEY = "AIzaSyAfzTSTjTKax3kN1kIvjWpCgC9vhHelC38";             // ← replace
-    const PLAYLIST_ID = "UUHckElrn7MRr8UL__97gqdg";     // ← replace
-    const MAX_RESULTS = 50;                              // number of videos to show
+    const API_KEY     = "AIzaSyAfzTSTjTKax3kN1kIvjWpCgC9vhHelC38";   // ← replace with your own key
+    const PLAYLIST_ID = "UUHckElrn7MRr8UL__97gqdg";                  // ← your uploads playlist ID
+    const BATCH_SIZE  = 12;                                           // videos per page
 
     // Update year in footer
     document.getElementById("year").textContent = new Date().getFullYear();
 
-    // Fetch the latest uploads and inject cards
-    const requestUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=${MAX_RESULTS}&playlistId=${PLAYLIST_ID}&key=${API_KEY}`;
+    // ------- Pagination state -------
+    let nextPageToken = null;
 
-    fetch(requestUrl)
-      .then(r => r.json())
-      .then(({ items }) => {
-        const container = document.getElementById("videos");
-        items.forEach(({ snippet }) => {
-          const { resourceId: { videoId }, title, thumbnails } = snippet;
-          const mediumThumb = thumbnails.medium || thumbnails.default;
-          container.insertAdjacentHTML('beforeend', `
-            <article class="card">
-              <iframe width="100%" height="158"
-                      src="https://www.youtube.com/embed/${videoId}"
-                      title="${title}" frameborder="0"
-                      allow="accelerometer; autoplay; clipboard-write;
-                            encrypted-media; gyroscope; picture-in-picture"
-                      allowfullscreen></iframe>
-              <h3>${title}</h3>
-            </article>
-          `);
+    // ------- Helper: build one video card -------
+    function videoCard({ snippet }) {
+      const { resourceId: { videoId }, title, thumbnails } = snippet;
+      const thumb = thumbnails.medium || thumbnails.default;
+      return `
+        <article class="card" data-videoid="${videoId}">
+          <iframe loading="lazy" width="100%" height="158"
+                  src="https://www.youtube.com/embed/${videoId}"
+                  title="${title}" frameborder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen></iframe>
+          <h3>${title}</h3>
+        </article>`;
+    }
+
+    // ------- Fetch & render a page of videos -------
+    function loadVideos() {
+      let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=${BATCH_SIZE}&playlistId=${PLAYLIST_ID}&key=${API_KEY}`;
+      if (nextPageToken) url += `&pageToken=${nextPageToken}`;
+
+      fetch(url)
+        .then(r => r.json())
+        .then(data => {
+          const container = document.getElementById("videos");
+          data.items.forEach(item => container.insertAdjacentHTML("beforeend", videoCard(item)));
+
+          // Update pagination token & button visibility
+          nextPageToken = data.nextPageToken || null;
+          document.getElementById("loadMore").style.display = nextPageToken ? "block" : "none";
+        })
+        .catch(err => {
+          console.error("YouTube API error", err);
+          document.getElementById("videos").innerHTML = "<p class=\"error\">Could not load videos. Check API key & quota.</p>";
         });
-      })
-      .catch(err => {
-        console.error("YouTube API error", err);
-        document.getElementById("videos").innerHTML = "<p class=\"error\">Could not load videos. Check API key & quota.</p>";
+    }
+
+    // ------- Event listeners -------
+    document.addEventListener("DOMContentLoaded", () => {
+      loadVideos();                                    // initial batch
+      document.getElementById("loadMore").addEventListener("click", loadVideos);
+
+      // Simple click‑tracking (console)
+      document.getElementById("videos").addEventListener("click", e => {
+        const card = e.target.closest("article[data-videoid]");
+        if (card) console.log("📊 Clicked video:", card.dataset.videoid);
       });
+    });
   </script>
 </body>
 </html>
+
